@@ -55,6 +55,8 @@ public class UserServiceImp implements IUserService, UserDetailsService {
     private IUserRepository userRepository;
     @Autowired
     private JavaMailSender javaMailSender;
+    @Autowired
+    private MailService mailService;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -88,6 +90,8 @@ public class UserServiceImp implements IUserService, UserDetailsService {
         user.setUserRoles(AppUserRole.ROLE_CLIENT);
         user.setDiscountPoint(0);
         user.setStatus(Status.ACTIVE);
+        mailService.sendEmail("dhanapal.jayapandi@amdocs.com", user.getEmail(), "Welcome to PhoneDept - Verify Your Email Address!", "please verify your email.")
+        
         return userRepository.save(user);
     }
 
