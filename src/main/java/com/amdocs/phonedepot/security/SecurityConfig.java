@@ -51,7 +51,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 		// No session will be created or used by spring security
 		http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
 		http.authorizeRequests().antMatchers("/api/v1/login/", "/api/v1/token-refresh/", "/api/v1/recover-password/",
-				"/api/v1/reset-password/**").permitAll();
+				"/api/v1/reset-password/**", "/api/v1/user/verify", "/api/v1/user/verify/", "/api/v1/user/verify/**").permitAll();
 		http.addFilter(new CustomAuthenticationFilter(authenticationManagerBean()));
 		http.addFilterBefore(new CustomAuthorizationFilter(), UsernamePasswordAuthenticationFilter.class);
 	}

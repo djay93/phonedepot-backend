@@ -19,16 +19,23 @@ import com.sendgrid.SendGrid;
 @Service
 public class MailService {
 	private static final Logger logger = LoggerFactory.getLogger(MailService.class);
-	
-	public String sendEmail(String varFrom, String varTo, String varSubject, String varContent) throws IOException {
+
+	public void sendVerificationEmail(String fromAddress, String toAddress, String name, String verifyLink) throws IOException {
 		// the sender email should be the same as we used to Create a Single Sender Verification
-		Email from = new Email(varFrom);
-		Email to = new Email(varTo);
-		String subject = varSubject;
-		Content content = new Content("text/plain", varContent);
+		Email from = new Email(fromAddress);
+		Email to = new Email(toAddress);
+
+		String subject = "Welcome to PhoneDepot by Amdocs Inc.";
+		Content content = new Content("text/html", "<html><body><p>Welcome to PhoneDepot:</p> " +
+				"<P>Hi " + name + "!</p>" +
+				"<P>Thanks for signing Up with Phonedepot. Phonedepot is an eCommerce company that sells smartphone and smartphone accessories.</P>" +
+				"<P>Please click on the below link to verify your Email: " + verifyLink + "</p>" +
+				"<P>Note: The link is valid for only 2 minutes.</p>" +
+				"</body></html>");
+
 		Mail mail = new Mail(from, subject, to, content);
 	
-		SendGrid sg = new SendGrid("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");
+		SendGrid sg = new SendGrid("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");
 		Request request = new Request();
 		try {
 			request.setMethod(Method.POST);
@@ -36,7 +43,6 @@ public class MailService {
 			request.setBody(mail.build());
 			Response response = sg.api(request);
 			logger.info(response.getBody());
-			return response.getBody();	     
 		} catch (IOException ex) {
 			throw ex;
 		}	   

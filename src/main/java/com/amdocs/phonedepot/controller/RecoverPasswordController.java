@@ -32,7 +32,8 @@ public class RecoverPasswordController {
 
 	@Autowired
 	private final UserServiceImp serviceImp;
-  
+
+	/*
 	@GetMapping(value = "/recover-password")
 	public ResponseEntity<Response> recoverPassword(HttpServletRequest request, HttpServletResponse response,
 			@RequestParam(name = "email") String email) throws MessagingException {
@@ -46,7 +47,7 @@ public class RecoverPasswordController {
 			return ResponseEntity.ok(Response.builder().timeStamp(Instant.now()).message("The email do not exist")
 					.status(HttpStatus.BAD_REQUEST).statusCode(HttpStatus.BAD_REQUEST.value()).build());
 		}
-	}
+	}*/
 
 	@PostMapping("/reset-password")
 	public ResponseEntity<Response> resetPassword(HttpServletRequest request,

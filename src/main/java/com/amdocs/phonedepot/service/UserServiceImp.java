@@ -21,8 +21,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -31,13 +30,13 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.transaction.Transactional;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 /**
@@ -54,9 +53,10 @@ public class UserServiceImp implements IUserService, UserDetailsService {
     @Autowired
     private IUserRepository userRepository;
     @Autowired
-    private JavaMailSender javaMailSender;
-    @Autowired
     private MailService mailService;
+
+    @Value("${sendgrid.verification.link}")
+    private String verificationLink;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -76,6 +76,7 @@ public class UserServiceImp implements IUserService, UserDetailsService {
     @Override
     public User create(User user, MultipartFile file) {
         log.info("Saving new user: " + user.getName());
+        log.info("Saving new user: " + user.getEmail());
         user.setIdUser(user.getIdUser());
         if (file != null) {
             try {
@@ -90,9 +91,32 @@ public class UserServiceImp implements IUserService, UserDetailsService {
         user.setUserRoles(AppUserRole.ROLE_CLIENT);
         user.setDiscountPoint(0);
         user.setStatus(Status.ACTIVE);
-        mailService.sendEmail("dhanapal.jayapandi@amdocs.com", user.getEmail(), "Welcome to PhoneDept - Verify Your Email Address!", "please verify your email.")
-        
+
+        try {
+            long otp = this.generateRandom();
+            String verificationUrl = verificationLink + "?email=" + user.getEmail() + "&otp=" + otp;
+            mailService.sendVerificationEmail("dhanapal.jayapandi@amdocs.com", user.getEmail(), user.getName(), verificationUrl);
+
+            user.setExpiryTime(LocalDateTime.now().plusMinutes(3));
+            user.setOtp(otp);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         return userRepository.save(user);
+    }
+
+    @Override
+    public boolean verifyEmail(User user, Long otp) {
+        LocalDateTime expiryTime = user.getExpiryTime();
+
+        if(LocalDateTime.now().isBefore(expiryTime) && user.getOtp() != null && user.getOtp().equals(otp)) {
+            user.setOtp(null);
+            user.setStatus(Status.ACTIVE);
+            return true;
+        }
+
+        return false;
     }
 
     @Override
@@ -247,6 +271,11 @@ public class UserServiceImp implements IUserService, UserDetailsService {
         return userRepository.findByUsername(username) != null ? userRepository.findByUsername(username) : null;
     }
 
+    public User findByUserEmail(String email) {
+        log.info("Searching user by email: " + email);
+        return userRepository.findByEmail(email) != null ? userRepository.findByEmail(email) : null;
+    }
+
     public UsernameDTO findByUsernameValidation(String username) {
         log.info("Searching user by username: " + username);
         return userRepository.findByUsername(username) != null
@@ -260,27 +289,11 @@ public class UserServiceImp implements IUserService, UserDetailsService {
         return usernameDTO;
     }
 
-    public Boolean sendMail(HttpServletRequest request, HttpServletResponse response, String email, String userName,
-                            String name) {
-
-        // Reference to the keyValue
-        Algorithm algorithm = Algorithm.HMAC256(OperationUtil.keyValue().getBytes());
-        String token = JWT.create().withSubject(userName)
-                // give 10 minutes for the token to expire
-                .withExpiresAt(new Date(System.currentTimeMillis() + 20 * 60 * 1000))
-                .withIssuer(request.getRequestURL().toString()).sign(algorithm);
-
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(email);
-
-        message.setSubject("McBurger - Reset Password");
-        String html = "Hi " + name + "! \n" + "Did you forget your password? \n"
-                + "We received a request to reset your password\n"
-                + "To reset your password please click on the following link \n"
-                + "http://ec2-54-82-72-210.compute-1.amazonaws.com:8080/api/v1/reset-password?token=" + token;
-        message.setText(html);
-        javaMailSender.send(message);
-        return true;
+    public Integer generateRandom() {
+        Random r = new Random();
+        int max = 99999;
+        int min = 10000;
+        return r.nextInt((max - min) + 1) + min;
     }
 
 }

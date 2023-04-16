@@ -15,6 +15,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 /**
  * @author Dhanapal
  */
@@ -43,6 +45,12 @@ public class User {
 	@NotNull(message = "password cannot be empty or null")
 	private String password;
 	private int discountPoint;
+
+	@Column(name = "otp")
+	private Long otp;
+
+	@Column(name = "expiry_time")
+	private LocalDateTime expiryTime;
 
 	private AppUserRole userRoles;
 

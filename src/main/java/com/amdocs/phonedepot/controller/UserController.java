@@ -11,8 +11,12 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
+import com.amdocs.phonedepot.dto.UserDTO;
 import com.amdocs.phonedepot.enumeration.AppUserRole;
+import com.amdocs.phonedepot.model.Product;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.repository.query.Param;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.Nullable;
@@ -49,6 +53,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/user")
+@Slf4j
 public class UserController {
 
 	@Autowired
@@ -60,6 +65,7 @@ public class UserController {
 			@RequestParam("userimage") @Nullable MultipartFile file) {
 
 		try {
+			log.info("Saving new user: " + strUser);
 			User user = new ObjectMapper().readValue(strUser, User.class);
 			if (serviceImp.findByUsername(user.getUsername()) == null) {
 				if (serviceImp.findByEmail(user.getEmail()) == null) {
@@ -83,6 +89,28 @@ public class UserController {
 							.status(HttpStatus.BAD_REQUEST).statusCode(HttpStatus.BAD_REQUEST.value()).build());
 		}
 
+	}
+
+	@GetMapping(value = "/verify")
+	public ResponseEntity<Response> verifyUser(@Param("email") String email, @Param("otp") Long otp) {
+		User user = serviceImp.findByUserEmail(email);
+		if(user != null) {
+			boolean result = serviceImp.verifyEmail(user, otp);
+
+			if (result) {
+				return ResponseEntity.ok(
+						Response.builder().timeStamp(Instant.now()).message("The user is verified.")
+								.status(HttpStatus.OK).statusCode(HttpStatus.OK.value()).build());
+			} else {
+				return ResponseEntity.ok(
+						Response.builder().timeStamp(Instant.now()).message("The user is not verified")
+								.status(HttpStatus.BAD_REQUEST).statusCode(HttpStatus.BAD_REQUEST.value()).build());
+			}
+		}
+
+		return ResponseEntity
+				.ok(Response.builder().timeStamp(Instant.now()).message("The user with email:" + user.getEmail() + " does not exist")
+						.status(HttpStatus.BAD_REQUEST).statusCode(HttpStatus.BAD_REQUEST.value()).build());
 	}
 
 	@PreAuthorize("hasRole('ROLE_ADMIN') OR hasRole('ROLE_EMPLOYEE')")
