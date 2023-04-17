@@ -17,6 +17,8 @@ public interface IUserService {
 
 	User create(User user, MultipartFile file);
 
+    User updateOTP(User user, Long otp);
+
     boolean verifyEmail(User user, Long otp);
 
     UserDTO update(Long id, User user, MultipartFile file);

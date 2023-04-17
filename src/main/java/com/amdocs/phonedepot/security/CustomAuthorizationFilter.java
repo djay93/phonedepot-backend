@@ -42,7 +42,7 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 
 		log.info(request.getServletPath());
 		if(request.getServletPath().equals("/api/v1/login/") || request.getServletPath().equals("/api/v1/token-refresh/")
-				|| request.getServletPath().contains("/user/verify")) {
+				|| request.getServletPath().contains("/recover-password") || request.getServletPath().contains("/reset-password")) {
 			filterChain.doFilter(request, response);
 		}else {
 			// here is where I start to check if the user has permission

@@ -35,7 +35,6 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.Random;
 import java.util.stream.Collectors;
 
@@ -94,8 +93,8 @@ public class UserServiceImp implements IUserService, UserDetailsService {
 
         try {
             long otp = this.generateRandom();
-            String verificationUrl = verificationLink + "?email=" + user.getEmail() + "&otp=" + otp;
-            mailService.sendVerificationEmail("dhanapal.jayapandi@amdocs.com", user.getEmail(), user.getName(), verificationUrl);
+            String verificationUrl = verificationLink + "?email=" + user.getEmail();
+            mailService.sendVerificationEmail("dhanapal.jayapandi@amdocs.com", user.getEmail(), user.getName(), verificationUrl, otp);
 
             user.setExpiryTime(LocalDateTime.now().plusMinutes(3));
             user.setOtp(otp);
@@ -107,9 +106,18 @@ public class UserServiceImp implements IUserService, UserDetailsService {
     }
 
     @Override
+    public User updateOTP(User user, Long otp) {
+        user.setExpiryTime(LocalDateTime.now().plusMinutes(3));
+        user.setOtp(otp);
+        return userRepository.save(user);
+    }
+
+    @Override
     public boolean verifyEmail(User user, Long otp) {
         LocalDateTime expiryTime = user.getExpiryTime();
 
+        log.info(LocalDateTime.now().toString());
+        log.info(expiryTime.toString());
         if(LocalDateTime.now().isBefore(expiryTime) && user.getOtp() != null && user.getOtp().equals(otp)) {
             user.setOtp(null);
             user.setStatus(Status.ACTIVE);
